@@ -23,3 +23,22 @@ from libapi.templates import pct_encode
 )
 def test_pct_encode(a: str, b: str):
     assert pct_encode(a) == b
+
+
+@mark.parametrize(
+    'a, b',
+    [
+        param('', '', id='zero-length'),
+        param('hello123', 'hello123', id='no-encode'),
+        param('hello world', 'hello%20world', id='encode-space'),
+        param('hello%20world', 'hello%20world', id='encode-percent'),
+        param(
+            ' !"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~',
+            '%20!%22#$%&\'()*+,-./:;%3C=%3E?@[%5C]%5E_%60%7B%7C%7D~',
+            id='encode-special',
+        ),
+        param('你好', '%E4%BD%A0%E5%A5%BD', id='encode-multibyte'),
+    ],
+)
+def test_pct_encode_reserved(a: str, b: str):
+    assert pct_encode(a, reserved_expansion=True) == b
