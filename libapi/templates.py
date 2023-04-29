@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from itertools import chain
 from operator import attrgetter
 import re
-from typing import Any
+from typing import Any, Literal, overload
 from urllib.parse import quote
 
 __all__ = ['pct_encode', 'URITemplate']
@@ -54,12 +54,24 @@ class URITemplate(str):
 
         return self
 
-    def expand(self, values: dict[str, Any]) -> str:
+    @overload
+    def expand(self, values: dict[str, Any], partial: Literal[False] = False) -> str:
+        ...
+
+    @overload
+    def expand(self, values: dict[str, Any], partial: Literal[True] = True) -> URITemplate:
+        ...
+
+    def expand(self, values: dict[str, Any], partial=False) -> str | URITemplate:
         result = self[:]
 
-        vars = chain.from_iterable(self.variables.values())
+        if partial:
+            vars = chain.from_iterable(self.variables.get(v, ()) for v in values)
+        else:
+            vars = chain.from_iterable(self.variables.values())
+
         for v in sorted(vars, key=attrgetter('start'), reverse=True):
-            if v.variable not in values:
+            if not partial and v.variable not in values:
                 result = result[: v.start] + result[v.end :]
                 continue
 
@@ -75,4 +87,4 @@ class URITemplate(str):
 
             result = result[: v.start] + value + result[v.end :]
 
-        return result
+        return URITemplate(result) if partial else result
