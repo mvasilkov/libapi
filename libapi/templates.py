@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
+from itertools import chain
+from operator import attrgetter
 import re
 from typing import Any
 from urllib.parse import quote
@@ -26,6 +28,7 @@ def pct_encode(a: str, reserved_expansion=False) -> str:
 @dataclass
 class Variable:
     operator: str
+    variable: str
     start: int
     end: int
 
@@ -47,9 +50,29 @@ class URITemplate(str):
             operator = exp.group(1)
             variable = exp.group(2)
             start, end = exp.span()
-            self.variables[variable].append(Variable(operator, start, end))
+            self.variables[variable].append(Variable(operator, variable, start, end))
 
         return self
 
     def expand(self, values: dict[str, Any]) -> str:
-        pass
+        result = self[:]
+
+        vars = chain.from_iterable(self.variables.values())
+        for v in sorted(vars, key=attrgetter('start'), reverse=True):
+            if v.variable not in values:
+                result = result[: v.start] + result[v.end :]
+                continue
+
+            value = values.get(v.variable)
+            value = '' if value is None else str(value)
+
+            if v.operator == '+':
+                value = pct_encode(value, reserved_expansion=True)
+            elif v.operator == '#':
+                value = '#' + pct_encode(value, reserved_expansion=True)
+            else:
+                value = pct_encode(value)
+
+            result = result[: v.start] + value + result[v.end :]
+
+        return result
