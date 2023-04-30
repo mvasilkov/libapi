@@ -11,7 +11,7 @@ from urllib.parse import quote
 __all__ = ['pct_encode', 'URITemplate']
 
 # TODO RFC 6570 Reserved Expansion only accepts % in pct-encoded triplets
-reserved_characters = 0x21232425262728292A2B2C2F3A3B3D3F405B5D.to_bytes(19, 'big')
+reserved_characters = b"!#$%&'()*+,/:;=?@[]"
 
 # Accept zero-length variables. This is not in the RFC
 expression_pattern = re.compile(r'\{([+#]?)(.*?)\}')
