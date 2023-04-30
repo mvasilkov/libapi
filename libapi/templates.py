@@ -5,13 +5,15 @@ from dataclasses import dataclass
 from itertools import chain
 from operator import attrgetter
 import re
-from typing import Any, Literal, overload
+from typing import Any, Literal, Mapping, overload
 from urllib.parse import quote
 
 __all__ = ['pct_encode', 'URITemplate']
 
-# TODO RFC 6570 Reserved Expansion only accepts % in pct-encoded triplets
 reserved_characters = b"!#$%&'()*+,/:;=?@[]"
+
+# Find % character that isn't in a pct-encoded triplet
+pct_not_encoded_pattern = re.compile(r'%(?![0-9a-fA-F]{2})')
 
 # Accept zero-length variables. This is not in the RFC
 expression_pattern = re.compile(r'\{([+#]?)(.*?)\}')
@@ -22,7 +24,9 @@ def pct_encode(a: str, reserved_expansion=False) -> str:
     Percent-Encoding based on RFC 3986
     https://datatracker.ietf.org/doc/html/rfc3986#section-2.1
     '''
-    return quote(a, safe=reserved_characters if reserved_expansion else b'', encoding='utf-8', errors='replace')
+    result = quote(a, safe=reserved_characters if reserved_expansion else b'', encoding='utf-8', errors='replace')
+    # RFC 6570 Reserved Expansion only accepts % in pct-encoded triplets
+    return pct_not_encoded_pattern.sub('%25', result) if reserved_expansion else result
 
 
 @dataclass
@@ -55,14 +59,18 @@ class URITemplate(str):
         return self
 
     @overload
-    def expand(self, values: dict[str, Any], partial: Literal[False] = False) -> str:
+    def expand(self, values: Mapping[str, Any], partial: Literal[False] = False) -> str:
         ...
 
     @overload
-    def expand(self, values: dict[str, Any], partial: Literal[True] = True) -> URITemplate:
+    def expand(self, values: Mapping[str, Any], partial: Literal[True] = True) -> URITemplate:
         ...
 
-    def expand(self, values: dict[str, Any], partial=False) -> str | URITemplate:
+    @overload
+    def expand(self, values: Mapping[str, Any], partial: bool = False) -> str | URITemplate:
+        ...
+
+    def expand(self, values: Mapping[str, Any], partial=False) -> str | URITemplate:
         result = self[:]
 
         if partial:
