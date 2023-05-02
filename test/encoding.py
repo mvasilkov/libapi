@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from hypothesis import given
+from hypothesis.strategies import text
 from pytest import mark, param
 
+from libapi.jsonpointer import escape as escape_jsonpointer, unescape as unescape_jsonpointer
 from libapi.templates import pct_encode
 
 
@@ -44,3 +47,32 @@ def test_pct_encode(a: str, b: str):
 )
 def test_pct_encode_reserved(a: str, b: str):
     assert pct_encode(a, reserved_expansion=True) == b
+
+
+@mark.parametrize(
+    'a, b',
+    [
+        param('', '', id='zero-length'),
+        param('hello world', 'hello world', id='unescaped'),
+        param('hello~0/world~1', 'hello~00~1world~01', id='escaped'),
+    ],
+)
+def test_escape_jsonpointer(a: str, b: str):
+    assert escape_jsonpointer(a) == b
+
+
+@mark.parametrize(
+    'a, b',
+    [
+        param('', '', id='zero-length'),
+        param('hello world', 'hello world', id='unescaped'),
+        param('hello~00~1world~01', 'hello~0/world~1', id='escaped'),
+    ],
+)
+def test_unescape_jsonpointer(a: str, b: str):
+    assert unescape_jsonpointer(a) == b
+
+
+@given(text())
+def test_escape_jsonpointer_roundtrip(a: str):
+    assert unescape_jsonpointer(escape_jsonpointer(a)) == a
