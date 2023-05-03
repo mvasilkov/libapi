@@ -79,12 +79,13 @@ class URITemplate(str):
             vars = chain.from_iterable(self.variables.values())
 
         for v in sorted(vars, key=attrgetter('start'), reverse=True):
-            if not partial and v.variable not in values:
-                result = result[: v.start] + result[v.end :]
+            value = values.get(v.variable)
+            if value is None:
+                if not partial:
+                    result = result[: v.start] + result[v.end :]
                 continue
 
-            value = values.get(v.variable)
-            value = '' if value is None else str(value)
+            value = str(value)
 
             if v.operator == '+':
                 value = pct_encode(value, reserved_expansion=True)

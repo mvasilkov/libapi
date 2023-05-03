@@ -1,1 +1,4 @@
 ryaml==0.4.0
+# dev
+hypothesis==latest
+pytest==latest
