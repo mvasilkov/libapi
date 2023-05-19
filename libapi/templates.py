@@ -19,7 +19,7 @@ pct_not_encoded_pattern = re.compile(r'%(?![0-9a-fA-F]{2})')
 expression_pattern = re.compile(r'\{([+#]?)(.*?)\}')
 
 
-def pct_encode(a: str, reserved_expansion=False) -> str:
+def pct_encode(a: str, *, reserved_expansion=False) -> str:
     '''
     Percent-Encoding based on RFC 3986
     https://datatracker.ietf.org/doc/html/rfc3986#section-2.1
@@ -59,18 +59,18 @@ class URITemplate(str):
         return self
 
     @overload
-    def expand(self, values: Mapping[str, Any], partial: Literal[False] = False) -> str:
+    def expand(self, values: Mapping[str, Any], *, partial: Literal[False] = False) -> str:
         ...
 
     @overload
-    def expand(self, values: Mapping[str, Any], partial: Literal[True] = True) -> URITemplate:
+    def expand(self, values: Mapping[str, Any], *, partial: Literal[True] = True) -> URITemplate:
         ...
 
     @overload
-    def expand(self, values: Mapping[str, Any], partial: bool = False) -> str | URITemplate:
+    def expand(self, values: Mapping[str, Any], *, partial: bool = False) -> str | URITemplate:
         ...
 
-    def expand(self, values: Mapping[str, Any], partial=False) -> str | URITemplate:
+    def expand(self, values: Mapping[str, Any], *, partial=False) -> str | URITemplate:
         result = self[:]
 
         if partial:
